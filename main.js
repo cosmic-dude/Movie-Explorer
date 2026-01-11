@@ -1,142 +1,162 @@
-// --- API Key --- (Replace with your actual OMDb API Key)
-const apiKey = '610173a0';
+const searchBtn = document.getElementById("search-btn");
+const movieTitleInput = document.getElementById("movie-title");
+const resultsContainer = document.getElementById("results-container");
+const sortBySelect = document.getElementById("sort-by");
+const errorMessage = document.getElementById("error-message");
+const homeBtn = document.getElementById("home-btn");
+const featuredMoviesContainer = document.getElementById("featured-movies-container");
+const featuredMoviesSection = document.getElementById("featured-movies-section");
+const searchResultsSection = document.querySelector(".results-section:not(#featured-movies-section)");
 
-// --- DOM Elements ---
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const sortSelect = document.getElementById('sort');
-const resultsContainer = document.getElementById('results-container');
-const errorContainer = document.getElementById('error-container');
-const recommendationsGrid = document.getElementById('recommendations-grid');
-const movieCardTemplate = document.getElementById('movie-card-template');
+const API_KEY = "610173a0"; // Replace with your OMDb API key
+const defaultMovies = ["Inception", "The Dark Knight", "Interstellar", "Parasite"];
 
-// --- Web Component for Movie Card ---
-class MovieCard extends HTMLElement {
-    constructor() {
-        super();
-        const templateContent = movieCardTemplate.content;
-        this.attachShadow({ mode: 'open' }).appendChild(templateContent.cloneNode(true));
-    }
-
-    set movie(movie) {
-        this.shadowRoot.querySelector('.movie-title').textContent = movie.Title;
-        this.shadowRoot.querySelector('.movie-year').textContent = `Year: ${movie.Year}`;
-        this.shadowRoot.querySelector('.movie-genre').textContent = `Genre: ${movie.Genre}`;
-        this.shadowRoot.querySelector('.movie-plot').textContent = movie.Plot;
-        this.shadowRoot.querySelector('.movie-rating').textContent = `IMDb Rating: ${movie.imdbRating}`;
-        this.shadowRoot.querySelector('.movie-poster').src = movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/250x375.png?text=No+Poster';
-        this.shadowRoot.querySelector('.movie-poster').alt = movie.Title;
-    }
-}
-customElements.define('movie-card', MovieCard);
-
-// --- Event Listeners ---
-searchBtn.addEventListener('click', searchMovies);
-sortSelect.addEventListener('change', sortMovies);
-
-let currentMovies = [];
-
-// --- Search Movies ---
-async function searchMovies() {
-    const searchTerm = searchInput.value.trim();
-    if (searchTerm === '') {
-        alert('Please enter a movie title.');
+// Function to fetch and display movies
+const searchMovies = () => {
+    const movieTitle = movieTitleInput.value.trim();
+    if (movieTitle === "") {
+        alert("Please enter a movie title.");
         return;
     }
 
-    clearResults();
+    errorMessage.style.display = "none";
+    resultsContainer.innerHTML = ""; // Clear previous results
+    featuredMoviesSection.style.display = "none"; // Hide featured movies
+    searchResultsSection.style.display = "block"; // Show search results
 
-    try {
-        const response = await fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=${apiKey}`);
-        const data = await response.json();
-
-        if (data.Response === 'True') {
-            const detailedMovies = await Promise.all(
-                data.Search.map(movie => fetchMovieDetails(movie.imdbID))
-            );
-            currentMovies = detailedMovies.filter(movie => movie);
-            displayMovies(currentMovies);
-            if (currentMovies.length > 0) {
-                getRecommendations(currentMovies[0].Genre);
+    fetch(`https://www.omdbapi.com/?s=${movieTitle}&apikey=${API_KEY}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.Response === "True") {
+                fetchFullMovieDetails(data.Search, displayMovies);
+            } else {
+                showError("Movie not found. Please try another title.");
             }
-        } else {
-            showError('Movie not found!');
-        }
-    } catch (error) {
-        showError('An error occurred. Please try again later.');
-        console.error('Error fetching data:', error);
-    }
-}
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error);
+            showError("An error occurred while fetching data. Please check your network connection.");
+        });
+};
 
-// --- Fetch Movie Details ---
-async function fetchMovieDetails(imdbID) {
-    try {
-        const response = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=${apiKey}`);
-        const data = await response.json();
-        return data.Response === 'True' ? data : null;
-    } catch (error) {
-        console.error('Error fetching movie details:', error);
-        return null;
-    }
-}
+// Fetch full details for each movie
+const fetchFullMovieDetails = (movies, displayFunction) => {
+    const moviePromises = movies.map(movie =>
+        fetch(`https://www.omdbapi.com/?i=${movie.imdbID}&apikey=${API_KEY}`)
+            .then(response => response.json())
+    );
 
-// --- Display Movies ---
-function displayMovies(movies) {
-    movies.forEach(movie => {
-        const movieCard = document.createElement('movie-card');
-        movieCard.movie = movie;
+    Promise.all(moviePromises)
+        .then(movieData => {
+            displayFunction(movieData);
+        })
+        .catch(error => {
+            console.error("Error fetching detailed movie data:", error);
+            showError("An error occurred while fetching movie details.");
+        });
+};
+
+// Function to display movies in the grid
+const displayMovies = (movies) => {
+    resultsContainer.innerHTML = ""; // Clear previous results
+    const sortedMovies = sortMovies(movies, sortBySelect.value);
+    sortedMovies.forEach(movie => {
+        const movieCard = createMovieCard(movie);
         resultsContainer.appendChild(movieCard);
+    });
+};
+
+const displayFeaturedMovies = (movies) => {
+    featuredMoviesContainer.innerHTML = ""; // Clear previous results
+    movies.forEach(movie => {
+        const movieCard = createMovieCard(movie);
+        featuredMoviesContainer.appendChild(movieCard);
     });
 }
 
-// --- Sort Movies ---
-function sortMovies() {
-    const sortBy = sortSelect.value;
-    let sortedMovies = [...currentMovies];
+// Function to create a movie card
+const createMovieCard = (movie) => {
+    const movieCard = document.createElement("div");
+    movieCard.classList.add("movie-card");
+    movieCard.dataset.year = movie.Year;
+    movieCard.dataset.imdbRating = movie.imdbRating;
 
-    if (sortBy === 'year') {
-        sortedMovies.sort((a, b) => b.Year - a.Year);
-    } else if (sortBy === 'imdbRating') {
-        sortedMovies.sort((a, b) => b.imdbRating - a.imdbRating);
+    const poster = movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/280x420?text=No+Image";
+
+    movieCard.innerHTML = `
+        <img src="${poster}" alt="${movie.Title} Poster">
+        <div class="movie-card-content">
+             <h3 class="movie-card-title">${movie.Title} (${movie.Year})</h3>
+            <p class="movie-card-details rating">⭐ ${movie.imdbRating}</p>
+            <p class="movie-card-details">${movie.Genre}</p>
+            <p class="movie-card-details plot">${movie.Plot}</p>
+        </div>
+    `;
+
+    return movieCard;
+};
+
+// Function to show error messages
+const showError = (message) => {
+    errorMessage.textContent = message;
+    errorMessage.style.display = "block";
+};
+
+// Function to sort movies
+const sortMovies = (movies, sortBy) => {
+    return movies.sort((a, b) => {
+        const aValue = (sortBy === 'year') ? a.Year : a.imdbRating;
+        const bValue = (sortBy === 'year') ? b.Year : b.imdbRating;
+
+        // For IMDb rating and Year, higher is better, so sort descending
+        return bValue.localeCompare(aValue, undefined, { numeric: true });
+    });
+};
+
+const fetchDefaultMovies = () => {
+    const moviePromises = defaultMovies.map(movieTitle =>
+        fetch(`https://www.omdbapi.com/?t=${movieTitle}&apikey=${API_KEY}`)
+            .then(response => response.json())
+    );
+
+    Promise.all(moviePromises)
+        .then(movieData => {
+            displayFeaturedMovies(movieData);
+        })
+        .catch(error => {
+            console.error("Error fetching default movies:", error);
+            showError("An error occurred while fetching default movies.");
+        });
+}
+
+// Event Listeners
+searchBtn.addEventListener("click", searchMovies);
+movieTitleInput.addEventListener("keypress", (e) => {
+    if (e.key === 'Enter') {
+        searchMovies();
     }
+});
 
-    clearResults();
-    displayMovies(sortedMovies);
-}
+sortBySelect.addEventListener("change", () => {
+    const movieCards = Array.from(resultsContainer.querySelectorAll(".movie-card"));
+    const movies = movieCards.map(card => ({
+        imdbID: card.querySelector("img").alt.replace(" Poster", ""), // A bit of a hack to get the ID back
+        Title: card.querySelector(".movie-card-title").textContent.split(' (')[0],
+        Year: card.dataset.year,
+        imdbRating: card.dataset.imdbRating,
+        Genre: card.querySelector(".movie-card-details:nth-of-type(2)").textContent,
+        Plot: card.querySelector(".plot").textContent,
+        Poster: card.querySelector("img").src
+    }));
 
-// --- Recommendations ---
-async function getRecommendations(genre) {
-    if (!genre) return;
-    const primaryGenre = genre.split(',')[0].trim();
-    recommendationsGrid.innerHTML = '';
+    displayMovies(movies); // Re-display sorted movies
+});
 
-    try {
-        const response = await fetch(`https://www.omdbapi.com/?s=${primaryGenre}&apikey=${apiKey}`);
-        const data = await response.json();
+homeBtn.addEventListener("click", () => {
+    location.reload();
+});
 
-        if (data.Response === 'True') {
-            const detailedMovies = await Promise.all(
-                data.Search.slice(0, 5).map(movie => fetchMovieDetails(movie.imdbID))
-            );
-            detailedMovies.forEach(movie => {
-                if(movie) {
-                    const movieCard = document.createElement('movie-card');
-                    movieCard.movie = movie;
-                    recommendationsGrid.appendChild(movieCard);
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Error fetching recommendations:', error);
-    }
-}
-
-// --- Helper Functions ---
-function clearResults() {
-    resultsContainer.innerHTML = '';
-    errorContainer.textContent = '';
-}
-
-function showError(message) {
-    errorContainer.textContent = message;
-}
+document.addEventListener('DOMContentLoaded', () => {
+    fetchDefaultMovies();
+    searchResultsSection.style.display = "none";
+});

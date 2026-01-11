@@ -4,49 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movie Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Movie Explorer</h1>
+        <div class="logo">Movie<span>Explorer</span></div>
+        <nav>
+            <a href="#" id="home-btn" class="nav-btn"><i class="fas fa-home"></i> Home</a>
+        </nav>
     </header>
-
     <main>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search for a movie...">
-            <button id="searchBtn">Search</button>
-        </div>
-
-        <div class="filter-container">
-            <label for="sort">Sort by:</label>
-            <select id="sort">
-                <option value="year">Year</option>
-                <option value="imdbRating">IMDb Rating</option>
-            </select>
-        </div>
-
-        <div id="results-container" class="results-grid"></div>
-        <div id="error-container" class="error-message"></div>
-
-        <div id="recommendations-container">
-            <h2>Similar Movies</h2>
-            <div id="recommendations-grid" class="results-grid"></div>
-        </div>
-    </main>
-
-    <template id="movie-card-template">
-        <div class="movie-card">
-            <img class="movie-poster" src="" alt="Movie Poster">
-            <div class="movie-details">
-                <h3 class="movie-title"></h3>
-                <p class="movie-year"></p>
-                <p class="movie-genre"></p>
-                <p class="movie-plot"></p>
-                <p class="movie-rating"></p>
+        <section class="search-section">
+            <h2>Find Your Next Favorite Movie</h2>
+            <div class="search-container">
+                <input type="text" id="movie-title" placeholder="Search for a movie, e.g., Inception...">
+                <button id="search-btn">Search</button>
             </div>
-        </div>
-    </template>
+        </section>
 
+        <section id="featured-movies-section" class="results-section">
+            <h2 class="section-title">Featured Movies</h2>
+            <div id="featured-movies-container" class="results-grid">
+                <!-- Featured movies will be inserted here -->
+            </div>
+        </section>
+
+        <section class="results-section" style="display: none;">
+            <div class="controls-container">
+                <div class="filter-sort-container">
+                    <label for="sort-by">Sort by:</label>
+                    <select id="sort-by">
+                        <option value="imdb-rating">IMDb Rating</option>
+                        <option value="year">Year</option>
+                    </select>
+                </div>
+            </div>
+            <div id="results-container" class="results-grid">
+                <!-- Movie cards will be inserted here -->
+            </div>
+            <div id="error-message" class="error-message" style="display: none;"></div>
+        </section>
+    </main>
     <script src="main.js"></script>
 </body>
 </html>
