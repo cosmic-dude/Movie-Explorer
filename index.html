@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Explorer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Movie Explorer</h1>
+    </header>
+
+    <main>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search for a movie...">
+            <button id="searchBtn">Search</button>
+        </div>
+
+        <div class="filter-container">
+            <label for="sort">Sort by:</label>
+            <select id="sort">
+                <option value="year">Year</option>
+                <option value="imdbRating">IMDb Rating</option>
+            </select>
+        </div>
+
+        <div id="results-container" class="results-grid"></div>
+        <div id="error-container" class="error-message"></div>
+
+        <div id="recommendations-container">
+            <h2>Similar Movies</h2>
+            <div id="recommendations-grid" class="results-grid"></div>
+        </div>
+    </main>
+
+    <template id="movie-card-template">
+        <div class="movie-card">
+            <img class="movie-poster" src="" alt="Movie Poster">
+            <div class="movie-details">
+                <h3 class="movie-title"></h3>
+                <p class="movie-year"></p>
+                <p class="movie-genre"></p>
+                <p class="movie-plot"></p>
+                <p class="movie-rating"></p>
+            </div>
+        </div>
+    </template>
+
+    <script src="main.js"></script>
+</body>
+</html>
